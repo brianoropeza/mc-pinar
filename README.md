@@ -15,7 +15,7 @@ npm.cmd run dev
 
 4. Abre la dirección que muestre Vite, normalmente `http://localhost:5173/`.
 
-Para detener el servidor usa `Ctrl+C`. No combines este proyecto con carpetas o archivos de `yajar-sim`.
+Para detener el servidor usa `Ctrl+C`.
 
 ## Reglas del simulador
 
@@ -26,22 +26,6 @@ Para detener el servidor usa `Ctrl+C`. No combines este proyecto con carpetas o 
 - **Reapertura:** al iniciarse el siguiente turno se reanudan automáticamente las llegadas aleatorias.
 - **Reloj y velocidad:** el indicador avanza con la velocidad × seleccionada; se congela al pausar. «Reiniciar» vuelve a las 09:58 y reinicia los contadores.
 - **Recorrido:** entrada única → uno de los dos citófonos → unión de carriles → pago → entrega → salida. La circulación conserva separación mínima de seguridad y evita que dos automóviles ocupen una misma posición. Los vehículos que exceden la entrada disponible esperan fuera del tramo dibujado.
-
-## Horarios del modelo
-
-Son los horarios proporcionados para la simulación, no una verificación del funcionamiento comercial actual. Los rangos hasta las 23:59 incluyen el último minuto completo.
-
-| Día | Horario de atención |
-|---|---|
-| Lunes | 00:00–03:00 y 10:00–24:00 |
-| Martes | 00:00–03:00 y 10:00–24:00 |
-| Miércoles | 10:00–22:40 |
-| Jueves | 10:00–24:00 |
-| Viernes | 00:00–05:00 y 10:00–24:00 |
-| Sábado | 00:00–05:00 y 10:00–24:00 |
-| Domingo | 00:00–05:00 y 10:00–24:00 |
-
-Las franjas que continúan después de medianoche se enlazan automáticamente. Por ejemplo, de jueves 10:00 a viernes 05:00 no hay cierre a las 00:00.
 
 ## Parámetros
 
@@ -71,11 +55,4 @@ Las franjas que continúan después de medianoche se enlazan automáticamente. P
 `npm.cmd run typecheck` verifica TypeScript. `npm.cmd run build` genera la versión de producción. Ambas órdenes requieren ejecutar `npm.cmd install` previamente. El equipo debe tener una instalación de Node.js compatible con Vite 7.
 
 
-## Corrección del atasco en el tramo final (v1.0.1)
 
-- El movimiento procesa de forma explícita el último segmento de cada ruta y cambia de estado al llegar al destino.
-- El control de la unificación descarta reservas que ya no pertenecen a un vehículo del tramo.
-- La vista 3D oculta de inmediato los vehículos que abandonaron el sistema, sin dejar representaciones inmóviles.
-- Se añadieron pruebas de movilidad de 40 escenarios, incluyendo demanda elevada: `npm run test:traffic`.
-
-**Si acabas de reemplazar una versión anterior**, detén Vite, sustituye la carpeta completa, ejecuta `npm.cmd run dev -- --force`, recarga el navegador con `Ctrl+Shift+R` y reinicia el experimento. La actualización parcial en caliente puede conservar una instancia vieja del motor.
