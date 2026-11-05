@@ -5,7 +5,7 @@ import { clockLabel, durationLabel, nextTransition } from './model/clock'
 
 type ParameterKey = 'arrivalMean' | 'orderMean' | 'paymentMean' | 'deliveryMean' | 'speed'
 const definitions: { key:ParameterKey; name:string; unit:string; explanation:string; min:number; max:number }[] = [
-  { key:'arrivalMean',name:'Intervalo medio entre llegadas',unit:'segundos',explanation:'Tiempo medio entre dos ingresos consecutivos. Un intervalo más pequeño implica una tasa de llegada mayor (λ = 3600 / intervalo).',min:4,max:3600 },
+  { key:'arrivalMean',name:'Intervalo medio entre llegadas',unit:'segundos',explanation:'Tiempo medio entre dos ingresos consecutivos.',min:4,max:3600 },
   { key:'orderMean',name:'Toma del pedido',unit:'segundos',explanation:'Media de atención en cada uno de los dos citófonos paralelos. El vehículo permanece detenido durante todo su servicio.',min:5,max:1800 },
   { key:'paymentMean',name:'Servicio de pago',unit:'segundos',explanation:'Media de atención en la única ventanilla de pago. Los carros posteriores esperan sin atravesarla.',min:5,max:1800 },
   { key:'deliveryMean',name:'Servicio de entrega',unit:'segundos',explanation:'Media de atención en la ventanilla de entrega. Después de recibir el pedido, el vehículo recorre la salida.',min:5,max:1800 },
