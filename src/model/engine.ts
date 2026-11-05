@@ -31,7 +31,7 @@ export type Vehicle = {
 export type Report = {
   seconds: number; totalArrivals: number; exited: number; outsideQueue: number
   initialQueue: number; paymentQueue: number; deliveryQueue: number
-  averageSystem: number; maxQueue: number; open: boolean
+  averageSystem: number; averageOrderService: number; averagePaymentService: number; averageDeliveryService: number; averageServiceTotal: number; averageExitTravel: number; averageInitialWait: number; averagePaymentWait: number; averageDeliveryWait: number; maxQueue: number; open: boolean
   servers: { name: string; status: string; utilization: number }[]
   visibleIds: number[]; travelTimeMean: number
 }
@@ -64,6 +64,14 @@ export class AutoMacEngine {
   private mergeOwner: number | null = null
   private activity: Record<ServerName, number> = { cit1: 0, cit2: 0, payment: 0, delivery: 0 }
   private totalSystem = 0
+  // Solo tiempos de servicio de vehiculos que terminaron el recorrido.
+  private serviceTotals = { order: 0, payment: 0, delivery: 0 }
+  private serviceSamples = { order: 0, payment: 0, delivery: 0 }
+  private fullServiceTotal = 0
+  private fullServiceSamples = 0
+  private exitTravelTotal = 0
+  private waitTotals = { initial: 0, payment: 0, delivery: 0 }
+  private waitSamples = { initial: 0, payment: 0, delivery: 0 }
   private maxQueue = 0
   readonly minGap = 2.38
   readonly driveSpeed = 2.45
@@ -151,6 +159,46 @@ export class AutoMacEngine {
         if (this.mergeOwner === v.id) this.mergeOwner = null
         v.phase = 'finished'; v.departure = this.t; this.completed++
         this.totalSystem += this.t - v.arrived
+        // Tramo posterior a la atencion de entrega y anterior a abandonar el sistema.
+        if (v.finishedDelivery !== undefined) {
+          this.exitTravelTotal += Math.max(0, this.t - v.finishedDelivery)
+        }
+        // Tiempos reales de atencion, sin los recorridos ni las colas.
+        if (v.startedOrder !== undefined && v.finishedOrder !== undefined) {
+          this.serviceTotals.order += Math.max(0, v.finishedOrder - v.startedOrder)
+          this.serviceSamples.order++
+        }
+        if (v.startedPayment !== undefined && v.finishedPayment !== undefined) {
+          this.serviceTotals.payment += Math.max(0, v.finishedPayment - v.startedPayment)
+          this.serviceSamples.payment++
+        }
+        if (v.startedDelivery !== undefined && v.finishedDelivery !== undefined) {
+          this.serviceTotals.delivery += Math.max(0, v.finishedDelivery - v.startedDelivery)
+          this.serviceSamples.delivery++
+        }
+        if (v.startedOrder !== undefined && v.finishedOrder !== undefined &&
+            v.startedPayment !== undefined && v.finishedPayment !== undefined &&
+            v.startedDelivery !== undefined && v.finishedDelivery !== undefined) {
+          this.fullServiceTotal += (v.finishedOrder - v.startedOrder) +
+            (v.finishedPayment - v.startedPayment) +
+            (v.finishedDelivery - v.startedDelivery) +
+            (this.t - v.finishedDelivery)
+          this.fullServiceSamples++
+        }
+        // Los promedios se calculan entre vehiculos que finalizaron el recorrido.
+        // Incluyen traslados y bloqueos entre etapas, como las columnas del registro.
+        if (v.startedOrder !== undefined) {
+          this.waitTotals.initial += Math.max(0, v.startedOrder - v.arrived)
+          this.waitSamples.initial++
+        }
+        if (v.finishedOrder !== undefined && v.startedPayment !== undefined) {
+          this.waitTotals.payment += Math.max(0, v.startedPayment - v.finishedOrder)
+          this.waitSamples.payment++
+        }
+        if (v.finishedPayment !== undefined && v.startedDelivery !== undefined) {
+          this.waitTotals.delivery += Math.max(0, v.startedDelivery - v.finishedPayment)
+          this.waitSamples.delivery++
+        }
         // Evitar crecimiento indefinido en ejecuciones que abarcan muchas jornadas.
         this.all.delete(v.id)
         return
@@ -298,6 +346,14 @@ export class AutoMacEngine {
       paymentQueue: this.active.filter(v => v.phase === 'toPay1' || v.phase === 'toPay2').length,
       deliveryQueue: this.active.filter(v => v.phase === 'toDelivery').length,
       averageSystem: this.completed ? this.totalSystem / this.completed : 0,
+      averageOrderService: this.serviceSamples.order ? this.serviceTotals.order / this.serviceSamples.order : 0,
+      averagePaymentService: this.serviceSamples.payment ? this.serviceTotals.payment / this.serviceSamples.payment : 0,
+      averageDeliveryService: this.serviceSamples.delivery ? this.serviceTotals.delivery / this.serviceSamples.delivery : 0,
+      averageServiceTotal: this.fullServiceSamples ? this.fullServiceTotal / this.fullServiceSamples : 0,
+      averageExitTravel: this.completed ? this.exitTravelTotal / this.completed : 0,
+      averageInitialWait: this.waitSamples.initial ? this.waitTotals.initial / this.waitSamples.initial : 0,
+      averagePaymentWait: this.waitSamples.payment ? this.waitTotals.payment / this.waitSamples.payment : 0,
+      averageDeliveryWait: this.waitSamples.delivery ? this.waitTotals.delivery / this.waitSamples.delivery : 0,
       maxQueue: this.maxQueue,
       open: isOpen(this.t),
       visibleIds: this.active.map(v => v.id),
